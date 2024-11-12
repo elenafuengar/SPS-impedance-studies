@@ -1,8 +1,9 @@
 # SPS Impedance studies
 > Scripts used for beam-reference measurements to benchmark the impedance model at the CERN-SPS
 
-* 📁 **SPS Headtail Mode 0**: Studies with PyHeadtail to compute the growthrates of the HeadTail mode 0 instability for different negative chromaticities
-
+* 📁 **SPS Headtail Mode 0**: Studies with PyHeadtail to compute the growthrates of the HeadTail mode 0 instability for different negative chromaticities. 
+* 📁 **SPS Tune Shifts**: [TODO] Studies with PyHeadtail to compute the tune-shift with intensity for different positive chromaticities
+  
 ## 🗞️ Published proceedings
 
 ### Head-tail mode zero instability growth rate studies in the CERN SPS
