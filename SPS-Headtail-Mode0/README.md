@@ -7,8 +7,12 @@
 - qpvscan.py: Example of post-processing script using Growthrate class and PyHeadtail Bunch Monitor .h5 output files
 - SPS_Q26.wake: ASCII table containin the SPS Wake model for q26 optics, generated from: https://gitlab.cern.ch/IRIS/SPS_IW_model/SPS_IW_merged_SingleMulti_bunch_model
 
+### SPS parameters
+Simulations use single bunch 
+
 ### Quick PyHeadtail installation guide:
-At CERN, we recommend installing a Miniconda environment on `/afs/cern.ch/work/` from LxPlus and submit the simulation to `HTCondor`
+This guide works for single-bunch PyHEADTAIL simulations. For multi-bunch simulations, we recommend using `spack` and run on `SLURM` HPC cluster.
+Installing a Miniconda environment on `/afs/cern.ch/work/` from LxPlus and submit the simulation to `HTCondor`
 ```
 # get, install and activate miniconda
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
