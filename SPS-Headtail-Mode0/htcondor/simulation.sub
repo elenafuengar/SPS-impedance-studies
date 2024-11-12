@@ -1,0 +1,9 @@
+
+executable = simulation.sh
+RequestCpus = 1
++JobFlavour = "tomorrow"
+
+output = out.$(ProcId)
+error = err.$(ProcId)
+log = log.$(ProcId)
+queue
