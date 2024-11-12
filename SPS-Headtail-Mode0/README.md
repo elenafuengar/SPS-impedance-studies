@@ -9,7 +9,8 @@
 
 ### SPS parameters
 Simulations use single bunch low-intensity beam with Q26 optics. 
-SPS machine parameters for Q20 and Q26 optics can be found in: [H. BartosikThesis](http://cds.cern.ch/record/1644761/files/CERN-THESIS-2013-257.pdf?version=1)
+SPS machine parameters for Q20 and Q26 optics can be found in: 
+* [H. Bartosik PhD Thesis](http://cds.cern.ch/record/1644761/files/CERN-THESIS-2013-257.pdf?version=1)
 
 ![](https://codimd.web.cern.ch/uploads/upload_865d76bd94f7bb6626ab09fc454c878f.png)
 
