@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH --partition inf-short
+#SBATCH --time 20:00:00
+#SBATCH --ntasks 40
+#SBATCH --exclusive
+#SBATCH --hint=nomultithread
+
+source /hpcscratch/user/imasesso/spack/share/spack/setup-env.sh
+spack env activate pyht_env
+
+srun -u --hint=nomultithread python sps_multi_bunch_4x72bunches.py
+
