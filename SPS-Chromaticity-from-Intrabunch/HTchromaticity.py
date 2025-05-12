@@ -6,7 +6,7 @@ SPS BQHT headtail monitor data
 
 /nfs/cs-ccr-bqhtnfs/sps_data/SPS.BQHT/yyyy_mm_dd
 
-Mar 24
+August'24
 '''
 
 import h5py
@@ -18,14 +18,15 @@ import os
 
 class HTchromaticity():
 
-    def __init__(self, file=None, nturns=300, plane='V', knob=None,
+    def __init__(self, file=None, nturns=300, plane='V', knob=None, parquet=None,
                  bl=3, monitor=False, save_png=False, dpi=100, **kwargs):
 
         self.file = file
         self.nturns = nturns
         self.plane = plane
-        self.bl = bl #TODO use measurement --> 25 ns discussed with Tom
+        self.bl = bl #TODO use measurement 
         self.knob = knob
+        self.parquet = parquet
         self.monitor = monitor
         self.dpi = dpi
         self.save_png = save_png
@@ -36,7 +37,7 @@ class HTchromaticity():
             plt.style.use(['science','no-latex', 'ieee'])
         except:
             pass
-        matplotlib.rcParams.update({'font.size': 8})
+        matplotlib.rcParams.update({'font.size': 10})
 
         # monitor
         if self.monitor:
@@ -51,7 +52,33 @@ class HTchromaticity():
         if type(self.knob) is str:
             self.knob = float(self.knob)
 
+        if self.parquet is not None:
+            self.get_knob_from_parquet()
+
         self.get_data()
+
+    def get_knob_from_parquet(self, cycle_offset=5515, cycle_start=100):
+        import datascout as ds
+        d = ds.parquet_to_dict(self.parquet)
+        try:
+            self.pos = d['SPS.BQ.KICKED/ContinuousAcquisition']['value']['rawData'+self.plane]
+        except:
+            print(f'{self.file} contains no valid data')
+            self.beam_unstable = False
+            return
+
+        X = d['SPSBEAM/QPV']['value']['JAPC_FUNCTION']['X'] - cycle_offset
+        Y = d['SPSBEAM/QPV']['value']['JAPC_FUNCTION']['Y']
+        self.qpv = float(Y[X > cycle_start][0])
+
+        X = d['SPSBEAM/QPH']['value']['JAPC_FUNCTION']['X'] - cycle_offset
+        Y = d['SPSBEAM/QPH']['value']['JAPC_FUNCTION']['Y']
+        self.qph = float(Y[X > cycle_start][0])
+
+        if self.plane == 'V':
+            self.knob = self.qpv
+        elif self.plane == 'H':
+            self.knob = self.qph
 
     def get_data(self):
 
@@ -65,7 +92,7 @@ class HTchromaticity():
         else:
             raise Exception('Specify a valid plane: "H" or "V"')
 
-        self.len = int(len(self.delta)/self.nturns)
+        self.len = int(len(self.delta)/self.nturns) #should be 250
         self.delta = np.reshape(self.delta, [self.nturns, self.len])
 
         # Remove baseline
@@ -73,7 +100,7 @@ class HTchromaticity():
             self.delta[i, :] = self.delta[i, :] - np.mean(self.delta, axis=0) 
 
     def calc_chromaticity(self):
-
+        
         # 2D fourier transform
         ft = np.fft.ifftshift(self.delta)
         ft = np.fft.fft2(self.delta)
@@ -82,11 +109,30 @@ class HTchromaticity():
 
         # Compute phase offset
         ftleft = np.abs(self.ft[:(self.delta.shape[0]//2-5), :])
+        ftyfreq = np.fft.fftshift(np.fft.fftfreq(self.len, 25e-9/self.len))
         self.xp, self.yp = np.unravel_index(np.argmax(ftleft), ftleft.shape)
-        phase = -(self.yp - self.ft.shape[1]//2) / (self.ft.shape[1]//2)
-        self.qp = phase*3  #TODO normalize to chromaticity
+        
+        # normalize to chromaticity
+        self.qp_freq = ftyfreq[self.yp]
+        frev = 43.4e3 # 26 GeV [Hz]
+        #slip_factor = 0.62e-3    # 26GeV q26
+        slip_factor = 1.6e-3      # 100 GeV q26
+        tune = 26.18
+        self.qp = -self.qp_freq*slip_factor/frev/tune
 
-    def plot(self):
+        # old dirty way
+        #phase = -(self.yp - self.ft.shape[1]//2) / (self.ft.shape[1]//2)
+        #self.qp = phase*3       
+
+    def plot(self, xlim=None, ylim=None):
+        '''
+        Params
+        ------
+        xlim: list, opt
+            x limits of the HT data in turns
+        ylim: list, opt
+            y limits of the HT data in time [ns]
+        '''
 
         if self.monitor:
             for ax in self.axs:
@@ -94,13 +140,13 @@ class HTchromaticity():
         else:
             self.fig, self.axs = plt.subplots(1,2, dpi=self.dpi, figsize=(6.25, 3.25), num=1)
 
-        t = np.linspace(-self.bl*10, self.bl*10, self.nturns)*1e-9 #s
+        t = np.linspace(0, 25, self.len) #s --> 25 ns discussed with Tom
         n = np.arange(self.nturns) #s
         fx = np.fft.fftfreq(len(n), d=1/43e3) #sps rev freq
         fy = np.fft.fftfreq(len(t), d=(t[2]-t[1]))
 
         # z-t HT signal
-        extent_t = [0, self.nturns, t[0]*1e9, t[-1]*1e9]
+        extent_t = [0, self.nturns, t[0], t[-1]]
         ht = self.axs[0].imshow(self.delta.transpose(), cmap='rainbow', origin='lower', interpolation='spline36', extent=extent_t, aspect='auto')
         
         # 2D FFT signal
@@ -110,9 +156,13 @@ class HTchromaticity():
         self.axs[0].set_title(f'HT monitor - Bunch $\Delta_{self.plane}$')
         self.axs[0].set_ylabel('Time [ns]')
         self.axs[0].set_xlabel('Turns')
-        self.axs[0].set_ylim(-3*self.bl,3*self.bl)
-        #self.axs[0].set_xlim(100,200)
-        self.axs[0].text(0.65, 0.95, f'$Q\'_{self.plane}={round(self.qp,2)}$', ha='center',va='center', transform=self.axs[0].transAxes)
+        self.axs[0].set_ylim(12.5-self.bl,12.5+self.bl) #in [ns]
+        if ylim is not None:
+            self.axs[0].set_ylim(ylim[0],ylim[1])
+        if xlim is not None:
+            self.axs[0].set_xlim(xlim[0],xlim[1])
+        
+        self.axs[0].text(0.65, 0.95, f'Calc: $Q\'_{self.plane}={round(self.qp,2)}$', ha='center',va='center', transform=self.axs[0].transAxes)
 
         self.axs[1].set_title('2D FFT Magnitude')
         self.axs[1].set_yticklabels([])

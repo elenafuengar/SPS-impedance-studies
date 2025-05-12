@@ -4,10 +4,17 @@ import pandas as pd
 from HTchromaticity import HTchromaticity
 from datetime import date
 
+# Newest measured intrabunch 
+today = '2023_08_24' # date.today().isoformat()
+today = '2024_07_16' # files with 50 bunches
+path = f'/nfs/cs-ccr-bqhtnfs/sps_data/SPS.BQHT/{today}/'
+
+flist = glob.glob(path+'*.h5')
+files = {'-999' : flist[-1]}
+
+# Sample QPH files
 path = '/home/edelafue/cernbox/measurements/HTModeZeroGrow/2023/meas/'
 #flist = glob.glob(datapath+'*.h5')
-
-# QPH files
 files = {
 '-1.4' : 'SPS.BQHT_MD2_20230824_115423.h5', #QPH=-1.4
 '-1.3' : 'SPS.BQHT_MD2_20230824_115135.h5', #QPH=-1.3
