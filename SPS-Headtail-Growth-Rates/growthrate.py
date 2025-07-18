@@ -30,7 +30,8 @@ class GrowthRate():
 
     def __init__(self, file='bunchmonitor.h5', nperseg=65, noverlap=50, 
                  turn_min=1 , turn_max=None, interactive=True, grstart=None,
-                 machine='SPS', grmin=1e-5, plane='V', pad=3, **kwargs):
+                 machine='SPS', grmin=1e-5, plane='V', pad=3, source='BQ.KICKED',
+                 **kwargs):
 
         self.file = file
         self.nperseg = nperseg
@@ -43,6 +44,7 @@ class GrowthRate():
         self.beam_unstable = True
         self.pad = pad
         self.plane = plane
+        self.source = source
 
         self.qpv = None 
         self.qph = None 
@@ -56,8 +58,8 @@ class GrowthRate():
         elif self._machine =='SPS':
             self.BUCKET_MAX = 920 #924 is the correct number
             RING_CIRCUMFERENCE = 6895        #[m]
-            GAMMA_R = 251    # flat top 236 GeV
-            #GAMMA_R = 27.7   # flat bottom value 26 GeV
+            #GAMMA_R = 251    # flat top 236 GeV
+            GAMMA_R = 27.7   # flat bottom value 26 GeV
 
         elif self._machine == 'PS':
             self.BUCKET_MAX = 21
@@ -103,8 +105,15 @@ class GrowthRate():
         import datascout as ds
         d = ds.parquet_to_dict(self.file)
         self.data = d
+
+        # Define key for source of data
+        if self.source == 'BQ.KICKED':
+                key = 'SPS.BQ.KICKED/ContinuousAcquisition'
+        elif self.source == 'BQ.QC':
+                key = 'SPS.BQ.QC/Acquisition'
+        # Read dict data
         try:
-            self.pos = d['SPS.BQ.KICKED/ContinuousAcquisition']['value']['rawData'+self.plane]
+            self.pos = d[key]['value']['rawData'+self.plane]
         except:
             print(f'{self.file} contains no valid data')
             self.beam_unstable = False
